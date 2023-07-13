@@ -1,12 +1,29 @@
-import { Badge, Box, Heading, Image, Text } from '@chakra-ui/react';
-import React from 'react';
+import {
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  Card,
+  CardBody,
+  Center,
+  Heading,
+  Image,
+  Text,
+  useDisclosure,
+} from '@chakra-ui/react';
+import React, { useState } from 'react';
 import { sectionCenterStyles } from '../GlobalStyles';
 import { useParams } from 'react-router-dom';
 import { meetupsData } from '../events-data';
-import { findById } from '../utils';
+import { findById, getDateAndTime } from '../utils';
+import RSVPModal from '../components/RESVPModal';
 
 const SingleEventPage = () => {
   const { eventId } = useParams();
+
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const [isRSVPed, setIsRSVPed] = useState(false);
 
   const eventToDisplay = meetupsData.meetups.find(findById(eventId));
 
@@ -32,10 +49,18 @@ const SingleEventPage = () => {
     eventType,
     hostedBy,
     additionalInformation,
+    price,
   } = eventToDisplay;
 
   return (
-    <Box as="main" p="2rem" sx={sectionCenterStyles}>
+    <Box
+      as="main"
+      p="2rem"
+      sx={sectionCenterStyles}
+      display={'grid'}
+      gridTemplateColumns={{ md: '1fr 1fr' }}
+      gap="2rem"
+    >
       <Box>
         <Heading as="h2">{title}</Heading>
 
@@ -97,7 +122,64 @@ const SingleEventPage = () => {
         </Box>
       </Box>
 
-      <Box></Box>
+      <Box as="section">
+        <Box borderRadius={'md'} background={'gray.200'} p="2rem" pb="0">
+          <Text mb="2rem">
+            {getDateAndTime(eventStartTime)} to {getDateAndTime(eventEndTime)}
+          </Text>
+
+          <Text mb="2rem">{address}</Text>
+
+          {isPaid && <Text mb="2rem">${price}</Text>}
+        </Box>
+
+        <Box>
+          <Heading my="1rem" as="h3" fontSize="1.1rem">
+            Speakers:
+          </Heading>
+
+          <Box as="div" display={'flex'} gap="1rem">
+            {speakers.map(({ image, name, designation }, index) => (
+              <Card
+                p="1rem"
+                borderRadius={'md'}
+                key={index}
+                letterSpacing={'wider'}
+              >
+                <CardBody
+                  display="flex"
+                  flexDir="column"
+                  alignContent={'center'}
+                  textAlign={'center'}
+                  gap=".5rem"
+                >
+                  <Avatar src={image} name={name} m="auto" />
+
+                  <Text fontWeight={'bold'}>{name}</Text>
+                  <Text>{designation}</Text>
+                </CardBody>
+              </Card>
+            ))}
+          </Box>
+
+          {isOpen && !isRSVPed && (
+            <RSVPModal
+              isOpen={isOpen}
+              onClose={onClose}
+              isPaid={isPaid}
+              changeRSVPstatus={() => setIsRSVPed(true)}
+            />
+          )}
+
+          {new Date(eventStartTime).getTime() >= new Date().getTime() && (
+            <Center>
+              <Button display mt="2rem" onClick={onOpen} colorScheme="red">
+                {isRSVPed ? 'Already' : ''} RSVP
+              </Button>
+            </Center>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 };
